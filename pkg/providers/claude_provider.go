@@ -51,6 +51,12 @@ func (p *ClaudeProvider) GetDefaultModel() string {
 	return p.delegate.GetDefaultModel()
 }
 
+func NewClaudeProviderWithOAuthMiddleware(tokenSource func() (string, error)) *ClaudeProvider {
+	return &ClaudeProvider{
+		delegate: anthropicprovider.NewProviderWithOAuthMiddleware(tokenSource, ""),
+	}
+}
+
 func createClaudeTokenSource() func() (string, error) {
 	return func() (string, error) {
 		cred, err := getCredential("anthropic")
@@ -61,5 +67,22 @@ func createClaudeTokenSource() func() (string, error) {
 			return "", fmt.Errorf("no credentials for anthropic. Run: picoclaw auth login --provider anthropic")
 		}
 		return cred.AccessToken, nil
+	}
+}
+
+func createClaudeOAuthTokenSource() func() (string, error) {
+	return func() (string, error) {
+		cred, err := getCredential("anthropic")
+		if err != nil {
+			return "", fmt.Errorf("loading auth credentials: %w", err)
+		}
+		if cred == nil {
+			return "", fmt.Errorf("no credentials for anthropic. Run: picoclaw auth login --provider anthropic")
+		}
+		token, err := getAnthropicAccessToken(cred)
+		if err != nil {
+			return "", err
+		}
+		return token, nil
 	}
 }

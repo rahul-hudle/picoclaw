@@ -12,6 +12,13 @@ import (
 type EditFileTool struct {
 	allowedDir string
 	restrict   bool
+	permStore  *PermissionStore
+	permFn     PermissionFunc
+}
+
+func (t *EditFileTool) SetPermission(store *PermissionStore, fn PermissionFunc) {
+	t.permStore = store
+	t.permFn = fn
 }
 
 // NewEditFileTool creates a new EditFileTool with optional directory restriction.
@@ -67,7 +74,7 @@ func (t *EditFileTool) Execute(ctx context.Context, args map[string]interface{})
 		return ErrorResult("new_text is required")
 	}
 
-	resolvedPath, err := validatePath(path, t.allowedDir, t.restrict)
+	resolvedPath, err := validatePathWithPermission(ctx, path, t.allowedDir, t.restrict, t.permStore, t.permFn)
 	if err != nil {
 		return ErrorResult(err.Error())
 	}
@@ -104,6 +111,13 @@ func (t *EditFileTool) Execute(ctx context.Context, args map[string]interface{})
 type AppendFileTool struct {
 	workspace string
 	restrict  bool
+	permStore *PermissionStore
+	permFn    PermissionFunc
+}
+
+func (t *AppendFileTool) SetPermission(store *PermissionStore, fn PermissionFunc) {
+	t.permStore = store
+	t.permFn = fn
 }
 
 func NewAppendFileTool(workspace string, restrict bool) *AppendFileTool {
@@ -146,7 +160,7 @@ func (t *AppendFileTool) Execute(ctx context.Context, args map[string]interface{
 		return ErrorResult("content is required")
 	}
 
-	resolvedPath, err := validatePath(path, t.workspace, t.restrict)
+	resolvedPath, err := validatePathWithPermission(ctx, path, t.workspace, t.restrict, t.permStore, t.permFn)
 	if err != nil {
 		return ErrorResult(err.Error())
 	}
